@@ -18,6 +18,8 @@ class UserProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     return ListTile(
       title: Text(title),
       leading: CircleAvatar(
@@ -37,8 +39,14 @@ class UserProductCard extends StatelessWidget {
               ),
             ),
             IconButton(
-              onPressed: () {
-                context.read<Products>().deleteProduct(id);
+              onPressed: () async {
+                try {
+                  await context.read<Products>().deleteProduct(id);
+                } catch (err) {
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(content: Text(err.toString()))
+                  );
+                }
               },
               icon: Icon(
                 Icons.delete,

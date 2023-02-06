@@ -23,13 +23,21 @@ class ProductsScreen extends StatefulWidget {
 }
 
 class _ProductsScreenState extends State<ProductsScreen> {
-  bool showFavourites = false;
+  bool _showFavourites = false;
+  late Future _productsFuture;
+
+  Future _fetchProductsFuture() {
+    return context.read<Products>().fetchProducts();
+  }
+
+  @override
+  void initState() {
+    _productsFuture = _fetchProductsFuture();
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final products = context.watch<Products>();
-    final productsList = showFavourites ? products.favouriteItems : products.items;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('MyShop'),
@@ -49,7 +57,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
           PopupMenuButton(
             onSelected: (ProductsFilterOptions value) {
               setState(() {
-                showFavourites = value == ProductsFilterOptions.favourites;
+                _showFavourites = value == ProductsFilterOptions.favourites;
               });
             },
             itemBuilder: (_) => [
@@ -66,20 +74,34 @@ class _ProductsScreenState extends State<ProductsScreen> {
         ],
       ),
       drawer: const AppDrawer(),
-      body: GridView.builder(
-        padding: const EdgeInsets.all(10),
-        itemCount: productsList.length,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 1,
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
-        ),
-        itemBuilder: (ctx, i) {
-          return ChangeNotifierProvider.value(
-            value: productsList[i],
-            child: const ProductCard(),
-          );
+      body: FutureBuilder(
+        future: _productsFuture,
+        builder: (ctx, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          } else {
+            return Consumer<Products>(builder: (ctx, data, child) {
+              final productsList = _showFavourites ? data.favouriteItems : data.items;
+              return GridView.builder(
+                padding: const EdgeInsets.all(10),
+                itemCount: productsList.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 1,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                ),
+                itemBuilder: (ctx, i) {
+                  return ChangeNotifierProvider.value(
+                    value: productsList[i],
+                    child: const ProductCard(),
+                  );
+                },
+              );
+            });
+          }
         },
       ),
     );

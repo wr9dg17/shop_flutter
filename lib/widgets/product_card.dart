@@ -10,8 +10,9 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final product = context.read<Product>();
     final cart = context.read<Cart>();
+    final product = context.read<Product>();
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
@@ -22,7 +23,16 @@ class ProductCard extends StatelessWidget {
             builder: (ctx, product, _) => IconButton(
               color: Theme.of(context).colorScheme.secondary,
               icon: Icon(product.isFavourite ? Icons.favorite : Icons.favorite_outline),
-              onPressed: () => product.toggleFavourite(),
+              onPressed: () async {
+                scaffoldMessenger.hideCurrentSnackBar();
+                try {
+                  await product.toggleFavourite();
+                } catch (err) {
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(content: Text(err.toString()))
+                  );
+                }
+              },
             ),
           ),
           title: Text(
@@ -34,8 +44,8 @@ class ProductCard extends StatelessWidget {
             icon: const Icon(Icons.shopping_cart),
             onPressed: () {
               cart.addItem(product.id, product.title, product.price);
-              ScaffoldMessenger.of(context).hideCurrentSnackBar();
-              ScaffoldMessenger.of(context).showSnackBar(
+              scaffoldMessenger.hideCurrentSnackBar();
+              scaffoldMessenger.showSnackBar(
                 SnackBar(
                   content: const Text('Added item to cart'),
                   action: SnackBarAction(
